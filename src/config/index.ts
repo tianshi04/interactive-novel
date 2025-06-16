@@ -12,6 +12,11 @@ const config = {
   },
   databaseUrl: process.env.DATABASE_URL as string,
   geminiApiKey: process.env.GEMINI_API_KEY as string,
+  allowedOrigins: (process.env.ALLOWED_ORIGINS ?? '')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean),
+  node_env: process.env.NODE_ENV || 'development',
 };
 
 // Kiểm tra các biến môi trường quan trọng

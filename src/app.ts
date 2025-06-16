@@ -3,19 +3,34 @@ import 'express-async-errors';
 import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swagger';
+import { corsOptions } from './config/cors';
+import config from './config';
 
 import { authRouter } from './api/auth.routes';
 import { sessionsRouter } from './api/sessions.routes';
 import { optionsRouter } from './api/options.routes';
 import { ApiError } from './utils/errors';
 
+import { globalLimiter, authLimiter } from './config/rate-limiter';
+import helmet from 'helmet';
+
 const app = express();
 
-app.use(cors());
+app.set('trust proxy', 1);
+
+app.use(cors(corsOptions));
 app.use(express.json());
+app.use(helmet());
+
+app.use(globalLimiter);
+
+app.use('/api/auth', authLimiter, authRouter);
 
 // --- Swagger Docs Endpoint ---
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+if (config.node_env !== 'production') {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  console.log(`📚 API Docs available at http://localhost:${config.port}/api-docs`);
+}
 
 // API Routes
 app.use('/api/auth', authRouter);
@@ -35,8 +50,9 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     return res.status(err.statusCode).json({ message: err.message });
   }
 
-  // Xử lý các lỗi khác từ Prisma (ví dụ: không tìm thấy record)
-  // if (err instanceof Prisma.PrismaClientKnownRequestError) { ... }
+  if (config.node_env === 'production') {
+      return res.status(500).json({ message: 'An unexpected error occurred.' });
+  }
 
   return res.status(500).json({ message: 'Đã có lỗi xảy ra ở phía server.' });
 });
