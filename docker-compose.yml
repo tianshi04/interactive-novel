@@ -10,7 +10,4 @@ services:
       # Tự động đọc các biến môi trường từ file .env
       env_file:
         - ./.env
-      # Khởi động dịch vụ 'app' chỉ SAU KHI dịch vụ 'db' đã sẵn sàng
-      depends_on:
-        - db
       restart: unless-stopped
