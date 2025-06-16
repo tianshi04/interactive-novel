@@ -507,5 +507,68 @@ router.get('/:id', authMiddleware, async (req, res) => {
     res.status(200).json(responseData);
 });
 
+/**
+ * @swagger
+ * /api/sessions/{sessionId}:
+ *   delete:
+ *     summary: Delete a game session
+ *     tags: [Game Sessions]
+ *     description: Permanently deletes a game session and all of its related story segments.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The ID of the session to be deleted.
+ *     responses:
+ *       200:
+ *         description: Session deleted successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Session deleted successfully."
+ *       401:
+ *         description: Unauthorized. Invalid or missing token.
+ *       403:
+ *         description: Forbidden. The user does not have permission to delete this session.
+ *       404:
+ *         description: Not Found. No session found with the provided ID.
+ */
+router.delete('/:sessionId', authMiddleware, async (req, res) => {
+    const { sessionId } = req.params;
+    const userId = req.userId!;
+
+    // 1. Tìm session để kiểm tra sự tồn tại và quyền sở hữu
+    const session = await prisma.session.findUnique({
+        where: { id: sessionId },
+    });
+
+    // 2. Nếu không tồn tại, trả về lỗi 404
+    if (!session) {
+        throw new ApiError(404, 'Không tìm thấy phiên chơi.');
+    }
+
+    // 3. Nếu không thuộc sở hữu của người dùng, trả về lỗi 403
+    if (session.userId !== userId) {
+        throw new ApiError(403, 'Bạn không có quyền xóa phiên chơi này.');
+    }
+
+    // 4. Nếu mọi thứ hợp lệ, tiến hành xóa
+    // Prisma sẽ tự động xóa các StorySegment liên quan (cascading delete)
+    await prisma.session.delete({
+        where: { id: sessionId },
+    });
+
+    // 5. Trả về thông báo thành công
+    res.status(200).json({ message: 'Session deleted successfully.' });
+});
+
 
 export const sessionsRouter = router;
