@@ -1,0 +1,63 @@
+services:
+  db:
+    image: postgres:16-alpine
+
+    # Cấu hình các biến môi trường cho container PostgreSQL.
+    # Docker Compose sẽ tự động đọc các giá trị này từ file .env ở cùng thư mục.
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+
+    # Ánh xạ (map) một thư mục trên máy thật của bạn vào trong container.
+    # Điều này đảm bảo dữ liệu của database sẽ được lưu lại ngay cả khi container bị xóa và tạo lại.
+    # 'postgres_data' là một "named volume" do Docker quản lý.
+    # '/var/lib/postgresql/data' là đường dẫn mặc định mà PostgreSQL lưu dữ liệu bên trong container.
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    # Ánh xạ cổng (port) từ máy thật của bạn vào cổng bên trong container.
+    # Định dạng: 'HOST_PORT:CONTAINER_PORT'
+    # Điều này cho phép ứng dụng Node.js (chạy trên máy thật) kết nối vào database
+    # (chạy trong container) thông qua cổng 5433 của máy thật.
+    # Sử dụng cổng 5433 để tránh xung đột nếu bạn đã cài sẵn PostgreSQL trên máy (thường chạy ở cổng 5432).
+    ports:
+      - "5433:5432"
+
+    # Chính sách khởi động lại. 'unless-stopped' sẽ tự động khởi động lại container
+    # nếu nó bị lỗi, trừ khi bạn đã chủ động dừng nó.
+    restart: unless-stopped
+
+    # Định nghĩa một mạng ảo để các container có thể giao tiếp với nhau bằng tên dịch vụ.
+    # Rất hữu ích khi bạn thêm các dịch vụ khác (ví dụ: Redis, hoặc chính app Node.js) vào file này.
+    networks:
+      - web-novel-net
+
+  api:
+      # Build image từ Dockerfile trong thư mục hiện tại
+      build: .
+      # Đặt tên cho container để dễ nhận biết
+      container_name: web-novel-api-app
+      ports:
+        # Ánh xạ cổng 8000 của máy thật vào cổng 8000 của container
+        - "8000:8000"
+      # Tự động đọc các biến môi trường từ file .env
+      env_file:
+        - ./.env
+      # Khởi động dịch vụ 'app' chỉ SAU KHI dịch vụ 'db' đã sẵn sàng
+      depends_on:
+        - db
+      restart: unless-stopped
+      networks:
+        - web-novel-net
+
+# Định nghĩa các "named volumes" được sử dụng ở trên.
+# Docker sẽ tự quản lý việc tạo và dọn dẹp volume này.
+volumes:
+  postgres_data:
+
+
+# Định nghĩa các mạng ảo được sử dụng ở trên.
+networks:
+  web-novel-net:
+    driver: bridge
