@@ -170,7 +170,7 @@ router.post('/google/callback', sensitiveAuthLimiter, validateRequest(z.object({
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: config.node_env === 'production',
-      sameSite: 'none',
+      sameSite: config.node_env === 'production' ? 'none' : 'strict', // secure true => sameSite none
       maxAge: config.jwt.refreshTokenExpiresInDays * 24 * 60 * 60 * 1000,
     });
 
@@ -241,8 +241,8 @@ router.post('/refresh-token', sensitiveAuthLimiter, async (req, res) => {
       data: { revoked: true },
     });
 
-    res.clearCookie('refreshToken');
-    res.clearCookie('accessToken');
+    // res.clearCookie('refreshToken');
+    // res.clearCookie('accessToken');
     throw new ApiError(403, 'Suspicious activity detected. Please log in again.');
   }
   
@@ -292,9 +292,10 @@ router.post('/logout', generalAuthLimiter, authMiddleware, async (req, res) => {
             data: { revoked: true }
         }).catch(() => {}); // Bỏ qua lỗi nếu token không tồn tại
     }
+    console.log(`User ${req.userId} logged out.`);
 
-    res.clearCookie('refreshToken');
-    res.clearCookie('accessToken');
+    // res.clearCookie('refreshToken');
+    // res.clearCookie('accessToken');
 
     res.status(200).json({ message: 'Logged out successfully.' });
 });
