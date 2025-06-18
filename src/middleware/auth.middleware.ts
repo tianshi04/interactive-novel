@@ -16,6 +16,9 @@ declare global {
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   // 1. Đọc token từ cookie 'accessToken'
+  if (!req.cookies || !req.cookies.accessToken) {
+    throw new ApiError(401, 'Access token is missing.');
+  }
   const token = req.cookies.accessToken;
 
   // 2. Nếu không có token, trả về lỗi 401
