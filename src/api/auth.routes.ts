@@ -170,7 +170,7 @@ router.post('/google/callback', sensitiveAuthLimiter, validateRequest(z.object({
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: config.node_env === 'production',
-      sameSite: 'strict',
+      sameSite: 'none',
       maxAge: config.jwt.refreshTokenExpiresInDays * 24 * 60 * 60 * 1000,
     });
 
