@@ -9,6 +9,7 @@ import config from './config';
 import { authRouter } from './api/auth.routes';
 import { sessionsRouter } from './api/sessions.routes';
 import { optionsRouter } from './api/options.routes';
+import { usersRouter } from './api/users.routes';
 import { ApiError } from './utils/errors';
 
 import { globalLimiter } from './config/rate-limiter';
@@ -34,6 +35,7 @@ if (config.node_env !== 'production') {
 app.use('/api/auth', authRouter);
 app.use('/api/sessions', sessionsRouter);
 app.use('/api/options', optionsRouter);
+app.use('/api/users', usersRouter);
 
 // Root endpoint
 app.get('/', (req, res) => {
