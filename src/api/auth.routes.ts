@@ -16,6 +16,11 @@ import {
   GoogleCallbackRequestSchema,
 } from '../utils/api-types';
 
+import {
+  sensitiveAuthLimiter,
+  generalAuthLimiter,
+} from '../config/rate-limiter';
+
 const router = Router();
 router.use(cookieParser());
 
@@ -62,7 +67,7 @@ const oAuth2Client = new OAuth2Client(
  *                   type: string
  *                   description: The URL to redirect the user to for Google authentication.
  */
-router.get('/google/url', validateRequest(z.object({ query: GoogleUrlRequestSchema })), (req, res) => {
+router.get('/google/url', generalAuthLimiter, validateRequest(z.object({ query: GoogleUrlRequestSchema })), (req, res) => {
     const { code_challenge } = req.query;
 
     if (!code_challenge || typeof code_challenge !== 'string') {
@@ -125,7 +130,7 @@ router.get('/google/url', validateRequest(z.object({ query: GoogleUrlRequestSche
  *       401:
  *         description: Unauthorized. Invalid code/verifier or failed to authenticate with Google.
  */
-router.post('/google/callback', validateRequest(z.object({ body: GoogleCallbackRequestSchema })), async (req, res) => {
+router.post('/google/callback', sensitiveAuthLimiter, validateRequest(z.object({ body: GoogleCallbackRequestSchema })), async (req, res) => {
   const { code, codeVerifier } = req.body;
   if (!code) throw new ApiError(400, 'Authorization code is missing.');
   if (!codeVerifier) throw new ApiError(400, 'Code verifier is missing.');
@@ -186,24 +191,25 @@ router.post('/google/callback', validateRequest(z.object({ body: GoogleCallbackR
  * @swagger
  * /api/auth/refresh-token:
  *   post:
- *     summary: Obtain a new access token
+ *     summary: Obtain a new access token (sent via cookie)
  *     tags: [Authentication]
  *     description: |
- *       Uses the `refreshToken` stored in the secure HTTP-only cookie to issue a new, short-lived access token.
- *       This endpoint should be called by the client whenever an API request fails with a 401 "token expired" error, or initially after login.
+ *       Uses the `refreshToken` from its cookie to issue a new, short-lived access token.
+ *       The new access token is returned in a new `accessToken` HTTP-only cookie.
  *     responses:
  *       200:
- *         description: A new access token is successfully issued.
- *         content:
- *           application/json:
+ *         description: A new access token is successfully set in the cookie. The response body is empty.
+ *         headers:
+ *           Set-Cookie:
  *             schema:
- *               $ref: '#/components/schemas/AccessToken'
+ *               type: string
+ *               example: accessToken=...; Path=/; HttpOnly; Secure; SameSite=Strict
  *       401:
- *         description: Unauthorized. Refresh token is missing from the cookie.
+ *         description: Unauthorized. Refresh token is missing.
  *       403:
  *         description: Forbidden. The refresh token is invalid, revoked, or expired.
  */
-router.post('/refresh-token', async (req, res) => {
+router.post('/refresh-token', sensitiveAuthLimiter, async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken) {
     throw new ApiError(401, 'Refresh token is missing.');
@@ -217,11 +223,39 @@ router.post('/refresh-token', async (req, res) => {
   });
 
   if (!tokenInDb || tokenInDb.revoked || new Date() > tokenInDb.expiresAt) {
+    // Xóa cookie refreshToken không hợp lệ nếu có
+    res.clearCookie('refreshToken');
+    res.clearCookie('accessToken');
     throw new ApiError(403, 'Invalid or expired refresh token.');
   }
 
+  const currentIpAddress = req.ip;
+  if (tokenInDb.ipAddress !== currentIpAddress) {
+    console.warn(
+      `Potential refresh token theft detected for user ${tokenInDb.userId} from IP ${currentIpAddress}. Original IP was ${tokenInDb.ipAddress}.`
+    );
+    
+    // HÀNH ĐỘNG BẢO MẬT: Thu hồi tất cả các token của người dùng này
+    await prisma.refreshToken.updateMany({
+      where: { userId: tokenInDb.userId, revoked: false },
+      data: { revoked: true },
+    });
+
+    res.clearCookie('refreshToken');
+    res.clearCookie('accessToken');
+    throw new ApiError(403, 'Suspicious activity detected. Please log in again.');
+  }
+  
   const accessToken = generateAccessToken({ id: tokenInDb.userId });
-  res.status(200).json({ accessToken });
+
+  res.cookie('accessToken', accessToken, {
+    httpOnly: true,
+    secure: config.node_env === 'production',
+    sameSite: 'strict',
+    maxAge: 15 * 60 * 1000, // 15 phút (tính bằng mili-giây)
+  });
+
+  res.status(200).send();
 });
 
 /**
@@ -249,7 +283,7 @@ router.post('/refresh-token', async (req, res) => {
  *       401:
  *         description: Unauthorized. Missing or invalid access token.
  */
-router.post('/logout', authMiddleware, async (req, res) => {
+router.post('/logout', generalAuthLimiter, authMiddleware, async (req, res) => {
     const refreshToken = req.cookies.refreshToken;
     if (refreshToken) {
         const hashedToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
@@ -260,6 +294,8 @@ router.post('/logout', authMiddleware, async (req, res) => {
     }
 
     res.clearCookie('refreshToken');
+    res.clearCookie('accessToken');
+
     res.status(200).json({ message: 'Logged out successfully.' });
 });
 

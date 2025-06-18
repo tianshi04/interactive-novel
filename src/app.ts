@@ -11,7 +11,7 @@ import { sessionsRouter } from './api/sessions.routes';
 import { optionsRouter } from './api/options.routes';
 import { ApiError } from './utils/errors';
 
-import { globalLimiter, authLimiter } from './config/rate-limiter';
+import { globalLimiter } from './config/rate-limiter';
 import helmet from 'helmet';
 
 const app = express();
@@ -23,8 +23,6 @@ app.use(express.json());
 app.use(helmet());
 
 app.use(globalLimiter);
-
-app.use('/api/auth', authLimiter, authRouter);
 
 // --- Swagger Docs Endpoint ---
 if (config.node_env !== 'production') {

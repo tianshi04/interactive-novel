@@ -2,7 +2,6 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import config from '../config';
 import { prisma } from '../config/prisma-client';
-import { User } from '@prisma/client';
 
 export function generateAccessToken(user: { id: string }) {
     const payload = { userId: user.id };

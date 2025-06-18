@@ -1,5 +1,4 @@
 import dotenv from 'dotenv';
-import { access } from 'fs';
 import path from 'path';
 
 // Tải file .env từ thư mục gốc của project
@@ -25,7 +24,6 @@ const config = {
     clientId: process.env.GOOGLE_CLIENT_ID as string,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
   },
-  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
   apiUrl: (process.env.API_URL || 'http://localhost:8000') as string,
 };
 

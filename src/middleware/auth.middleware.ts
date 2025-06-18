@@ -15,22 +15,25 @@ declare global {
 }
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
+  // 1. Đọc token từ cookie 'accessToken'
+  const token = req.cookies.accessToken;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw new ApiError(401, 'Authentication token is missing or invalid.');
+  // 2. Nếu không có token, trả về lỗi 401
+  if (!token) {
+    // Mã lỗi 401 này sẽ báo cho frontend biết cần phải gọi /refresh-token
+    throw new ApiError(401, 'Access token is missing.');
   }
 
-  const token = authHeader.split(' ')[1];
-
   try {
-    // Dùng ACCESS_TOKEN_SECRET để xác minh
+    // 3. Xác minh token
     const payload = jwt.verify(token, config.jwt.accessTokenSecret) as { userId: string };
     req.userId = payload.userId;
     next();
   } catch (error) {
+    // 4. Nếu token hết hạn hoặc không hợp lệ, trả về lỗi 401
+    // Frontend sẽ dựa vào lỗi này để gọi /refresh-token
     if (error instanceof jwt.TokenExpiredError) {
-        throw new ApiError(401, 'Access token has expired.');
+      throw new ApiError(401, 'Access token has expired.');
     }
     throw new ApiError(401, 'Invalid access token.');
   }
