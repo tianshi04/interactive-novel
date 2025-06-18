@@ -294,8 +294,8 @@ router.post('/logout', generalAuthLimiter, authMiddleware, async (req, res) => {
     }
     console.log(`User ${req.userId} logged out.`);
 
-    // res.clearCookie('refreshToken');
-    // res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
+    res.clearCookie('accessToken');
 
     res.status(200).json({ message: 'Logged out successfully.' });
 });
