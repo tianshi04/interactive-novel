@@ -27,7 +27,7 @@ router.use(cookieParser());
 const oAuth2Client = new OAuth2Client(
   config.google.clientId,
   config.google.clientSecret,
-  `${config.apiUrl}/api/auth/google/callback`
+  `${config.frontendUrl}/google/callback`
 );
 
 /**

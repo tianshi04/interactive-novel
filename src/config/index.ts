@@ -25,6 +25,7 @@ const config = {
     clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
   },
   apiUrl: (process.env.API_URL || 'http://localhost:8000') as string,
+  frontendUrl: (process.env.FRONTEND_URL || 'http://localhost:5173') as string,
 };
 
 const requiredEnvVars: [string, unknown][] = [
