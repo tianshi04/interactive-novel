@@ -11,22 +11,18 @@ import { z } from 'zod';
 //         AUTHENTICATION
 // ==================================
 
-// Schema cho request body của /register và /login
-export const AuthSchema = z.object({
-  username: z.string().min(3, 'Tên người dùng phải có ít nhất 3 ký tự'),
-  password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+// Schema cho query params của GET /api/auth/google/url
+export const GoogleUrlRequestSchema = z.object({
+  code_challenge: z.string().min(1, 'code_challenge is required.'),
 });
-export type AuthInput = z.infer<typeof AuthSchema>;
+export type GoogleUrlRequestInput = z.infer<typeof GoogleUrlRequestSchema>;
 
-// Schema cho response body của /login
-export const AuthLoginResponseSchema = z.object({
-    token: z.string(),
-    user: z.object({
-    id: z.string().cuid(),
-    username: z.string(),
-  }),
+// Schema cho request body của POST /api/auth/google/callback
+export const GoogleCallbackRequestSchema = z.object({
+  code: z.string().min(1, 'Authorization code is required.'),
+  codeVerifier: z.string().min(1, 'Code verifier is required.'),
 });
-export type AuthLoginResponse = z.infer<typeof AuthLoginResponseSchema>;
+export type GoogleCallbackRequestInput = z.infer<typeof GoogleCallbackRequestSchema>;
 
 
 // ==================================

@@ -14,24 +14,24 @@ declare global {
   }
 }
 
-export const authMiddleware = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw new ApiError(401, 'Không có token xác thực hoặc token không hợp lệ.');
+    throw new ApiError(401, 'Authentication token is missing or invalid.');
   }
 
   const token = authHeader.split(' ')[1];
 
   try {
-    const payload = jwt.verify(token, config.jwt.secret) as { userId: string };
+    // Dùng ACCESS_TOKEN_SECRET để xác minh
+    const payload = jwt.verify(token, config.jwt.accessTokenSecret) as { userId: string };
     req.userId = payload.userId;
     next();
   } catch (error) {
-    throw new ApiError(401, 'Token không hợp lệ hoặc đã hết hạn.');
+    if (error instanceof jwt.TokenExpiredError) {
+        throw new ApiError(401, 'Access token has expired.');
+    }
+    throw new ApiError(401, 'Invalid access token.');
   }
 };

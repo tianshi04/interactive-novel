@@ -25,6 +25,30 @@ const options: swaggerJsdoc.Options = {
         },
       },
       schemas: {
+        User: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'cuid' },
+            email: { type: 'string', format: 'email' },
+            name: { type: 'string' },
+            avatarUrl: { type: 'string', format: 'uri', nullable: true }
+          },
+          example: {
+            id: 'clw9h3j1z0000a4b8c2d6e8f4',
+            email: 'user@example.com',
+            name: 'John Doe',
+            avatarUrl: 'https://lh3.googleusercontent.com/a/AItbvml... '
+          }
+        },
+        AccessToken: {
+          type: 'object',
+          properties: {
+            accessToken: {
+              type: 'string',
+              description: 'A short-lived JSON Web Token for accessing protected resources.'
+            }
+          }
+        },
         Option: {
           type: 'object',
           properties: {
