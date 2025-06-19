@@ -249,7 +249,7 @@ router.post('/refresh-token', sensitiveAuthLimiter, async (req, res) => {
   res.cookie('accessToken', accessToken, {
     httpOnly: true,
     secure: config.node_env === 'production',
-    sameSite: 'strict',
+    sameSite: config.node_env === 'production' ? 'none' : 'strict',
     maxAge: 15 * 60 * 1000, // 15 phút (tính bằng mili-giây)
   });
 
