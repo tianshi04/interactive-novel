@@ -239,8 +239,8 @@ router.post('/refresh-token', sensitiveAuthLimiter, async (req, res) => {
       data: { revoked: true },
     });
 
-    // res.clearCookie('refreshToken');
-    // res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
+    res.clearCookie('accessToken');
     throw new ApiError(403, 'Suspicious activity detected. Please log in again.');
   }
   
