@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { prisma } from '../config/prisma-client';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { OptionsResponseSchema, OptionsResponse } from '../utils/api-types';
-import cookieParser from 'cookie-parser';
 
 /**
  * @swagger
@@ -12,8 +11,6 @@ import cookieParser from 'cookie-parser';
  */
 
 const router = Router();
-router.use(cookieParser());
-
 // GET /api/options
 // Yêu cầu xác thực để đảm bảo chỉ người dùng đã đăng nhập mới có thể bắt đầu game
 /**

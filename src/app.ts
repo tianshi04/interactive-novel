@@ -5,6 +5,7 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swagger';
 import { corsOptions } from './config/cors';
 import config from './config';
+import cookieParser from 'cookie-parser';
 
 import { authRouter } from './api/auth.routes';
 import { sessionsRouter } from './api/sessions.routes';
@@ -16,6 +17,7 @@ import { globalLimiter } from './config/rate-limiter';
 import helmet from 'helmet';
 
 const app = express();
+app.use(cookieParser()); // Middleware để parse cookies
 
 app.set('trust proxy', 1);
 

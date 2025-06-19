@@ -9,6 +9,7 @@ import { aiService, ChatHistory } from '../services/ai.service';
 import { ApiError } from '../utils/errors';
 import { CreateSessionSchema, CreateSessionInput, PostChoiceRequestSchema, PostChoiceResponse, PostChoiceRequestInput } from '../utils/api-types';
 import { SessionListResponse, CreateSessionResponse, SessionDetailResponse } from '../utils/api-types';
+
 const router = Router();
 
 /**

@@ -3,7 +3,6 @@
 import { Router } from 'express';
 import { OAuth2Client, CodeChallengeMethod } from 'google-auth-library';
 import crypto from 'crypto';
-import cookieParser from 'cookie-parser';
 import config from '../config';
 import { prisma } from '../config/prisma-client';
 import { ApiError } from '../utils/errors';
@@ -22,7 +21,6 @@ import {
 } from '../config/rate-limiter';
 
 const router = Router();
-router.use(cookieParser());
 
 const oAuth2Client = new OAuth2Client(
   config.google.clientId,
